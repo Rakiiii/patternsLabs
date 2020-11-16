@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    tools:context=".MainActivity">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+    <Button
+        android:id="@+id/basic_matrix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Generate Basic Matrix" />
+
+    <Button
+        android:id="@+id/space_matrix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Generate Sparse Matrix" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/basic_matrix_renum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Renum Basic Matrix" />
+
+        <Button
+            android:id="@+id/space_matrix_renum"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Renum Sparse Matrix" />
+    </LinearLayout>
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+        <Button
+            android:id="@+id/basic_matrix_restore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Restore Basic Matrix" />
+
+        <Button
+            android:id="@+id/space_matrix_restore"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Restore Sparse Matrix" />
+    </LinearLayout>
+
+    <Button
+        android:id="@+id/draw_composite_matrix"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Draw CompositeMatrix"/>
+
+    <CheckBox
+        android:id="@+id/border"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Border" />
+
+    <ImageView
+        android:id="@+id/image"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/console_out"
+        android:textSize="25sp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+</LinearLayout>
