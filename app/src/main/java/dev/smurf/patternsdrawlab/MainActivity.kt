@@ -1,23 +1,24 @@
 package dev.smurf.patternsdrawlab
 
 import android.graphics.Bitmap
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import dev.smurf.patternsdrawlab.java.MatrixExecutor
+import androidx.fragment.app.FragmentActivity
+import dev.smurf.patternsdrawlab.java.Model
 import dev.smurf.patternsdrawlab.java.MatrixInitilizer
 import dev.smurf.patternsdrawlab.java.MatrixIntegerTranslator
+import dev.smurf.patternsdrawlab.java.commands.Revert
+import dev.smurf.patternsdrawlab.java.commands.matrixCommands.*
 import dev.smurf.patternsdrawlab.java.drawers.*
-import dev.smurf.patternsdrawlab.java.fabrics.MatrixFabric
 import dev.smurf.patternsdrawlab.java.interfaces.DrawableMatrix
-import dev.smurf.patternsdrawlab.java.interfaces.IDrawable
 import dev.smurf.patternsdrawlab.java.interfaces.IMatrix
 import dev.smurf.patternsdrawlab.java.matrix.*
 import kotlinx.android.synthetic.main.activity_main.*
 import java.util.*
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : FragmentActivity() {
 
     private var bmatrix: IMatrix<Int> = BasicMatrix<Int>(3, 3)
+    private val model: Model = Model()
 
     init {
         MatrixInitilizer.initializeMatrix(bmatrix, 7, 9)
@@ -32,52 +33,74 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-//        console_out.text = "kjnk.jnj\nnjkkjscnd\nnljn"
+        model.state.compositeMatrix.observe(this) {
+            drawCompositeMatrix(it)
+        }
+
+        model.state.basicMatrix.observe(this) {
+            drawBasicMatrix(it)
+        }
+
+        model.state.sparceMatrix.observe(this) {
+            drawSpareMatrix(it)
+        }
+
+        model.state.isBorders.observe(this) {
+            border.isChecked = it
+        }
+
+        model.state.type.observe(this) {
+            when (it) {
+                MatrixTypes.BasicMatrix -> drawBasicMatrix(model.state.basicMatrix.value)
+                MatrixTypes.SparceMatrix -> drawSpareMatrix(model.state.sparceMatrix.value)
+                MatrixTypes.CompositeMatrix -> drawCompositeMatrix(model.state.compositeMatrix.value)
+                MatrixTypes.NoRedraw -> return@observe
+                null -> return@observe
+            }
+        }
 
         border.setOnClickListener {
-            isBorder = !isBorder
+            model.commandStream.value = BorderCommand()
         }
         basic_matrix.setOnClickListener {
-            drawBasicMatrix()
+            model.state.basicMatrix.value = bmatrix
         }
 
         space_matrix.setOnClickListener {
-            drawSpareMatrix()
+            model.state.basicMatrix.value = smatrix
         }
 
         space_matrix_renum.setOnClickListener {
-            val decMatrix = MatrixRenumDecorator(smatrix)
-            decMatrix.RenumRows(Random().nextInt(smatrix.rows()), Random().nextInt(smatrix.rows()))
-            decMatrix.RenumCols(Random().nextInt(smatrix.cols()), Random().nextInt(smatrix.cols()))
-            smatrix = decMatrix
-            drawSpareMatrix()
+            model.commandStream.value = RenumSparceMatrix()
         }
 
         basic_matrix_renum.setOnClickListener {
-            val decMatrix = MatrixRenumDecorator(bmatrix)
-            decMatrix.RenumRows(Random().nextInt(bmatrix.rows()), Random().nextInt(bmatrix.rows()))
-            decMatrix.RenumCols(Random().nextInt(bmatrix.cols()), Random().nextInt(bmatrix.cols()))
-            bmatrix = decMatrix
-
-            drawBasicMatrix()
+            model.commandStream.value = RenumBasicMatrix()
         }
 
         basic_matrix_restore.setOnClickListener {
-            bmatrix = MatrixExecutor.execute(bmatrix)?.let { it } ?: bmatrix
-            drawBasicMatrix()
+            model.commandStream.value = RestoreBasicMatrix()
         }
 
         space_matrix_restore.setOnClickListener {
-            smatrix = MatrixExecutor.execute(smatrix)?.let { it } ?: smatrix
-            drawSpareMatrix()
+            model.commandStream.value = RestoreSparceMatrix()
         }
 
         draw_composite_matrix.setOnClickListener {
-            drawCompositeMatrix()
+            model.commandStream.value = DrawCompositeMatrix()
+        }
+
+        revert.setOnClickListener {
+            model.commandStream.value = Revert()
         }
     }
 
-    private fun drawSpareMatrix() {
+    private fun drawSpareMatrix(smatrix: IMatrix<Int>?) {
+        if (smatrix == null) {
+            image.setImageBitmap(Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888))
+            console_out.text = ""
+            return
+        }
         console_out.text = ""
         val decorableMatrix = smatrix
         var matrix: DrawableMatrix<DrawableInteger> =
@@ -99,7 +122,12 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun drawBasicMatrix() {
+    private fun drawBasicMatrix(bmatrix: IMatrix<Int>?) {
+        if (bmatrix == null) {
+            image.setImageBitmap(Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888))
+            console_out.text = ""
+            return
+        }
         console_out.text = ""
         val decorableMatrix = bmatrix
 
@@ -119,42 +147,15 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    private fun constructCompositeMatrix() = MatrixComposite.Builder<DrawableInteger>().apply {
-        var matrix = BasicMatrix<Int>(2, 2)
-        MatrixInitilizer.initializeMatrix(matrix, 4, 9)
-        var translatedMatrix =
-            MatrixIntegerTranslator.translateMatrix(matrix) { row, col -> BasicMatrix(row, col) }
-        addMatrixInExistedRow(translatedMatrix)
-        matrix = BasicMatrix<Int>(4, 3)
-        MatrixInitilizer.initializeMatrix(matrix, 12, 9)
-        translatedMatrix =
-            MatrixIntegerTranslator.translateMatrix(matrix) { row, col -> BasicMatrix(row, col) }
-        addMatrixInExistedRow(translatedMatrix)
-        matrix = BasicMatrix<Int>(1, 3)
-        MatrixInitilizer.initializeMatrix(matrix, 3, 9)
-        translatedMatrix =
-            MatrixIntegerTranslator.translateMatrix(matrix) { row, col -> BasicMatrix(row, col) }
-        addMatrixInExistedRow(wrapMatrixIntoBorder(translatedMatrix))
-        matrix = BasicMatrix<Int>(2, 4)
-        MatrixInitilizer.initializeMatrix(matrix, 8, 9)
-        translatedMatrix =
-            MatrixIntegerTranslator.translateMatrix(matrix) { row, col -> BasicMatrix(row, col) }
-        addMatrixInNextRow(wrapMatrixIntoBorder(translatedMatrix))
-        matrix = BasicMatrix<Int>(2, 3)
-        MatrixInitilizer.initializeMatrix(matrix, 6, 9)
-        translatedMatrix =
-            MatrixIntegerTranslator.translateMatrix(matrix) { row, col -> BasicMatrix(row, col) }
-        addMatrixInExistedRow(wrapMatrixIntoBorder(translatedMatrix))
-        matrix = BasicMatrix<Int>(1, 1)
-        MatrixInitilizer.initializeMatrix(matrix, 1, 9)
-        translatedMatrix =
-            MatrixIntegerTranslator.translateMatrix(matrix) { row, col -> BasicMatrix(row, col) }
-        addMatrixInNextRow(wrapMatrixIntoBorder(translatedMatrix))
-    }.build()
 
-    private fun drawCompositeMatrix() {
+    private fun drawCompositeMatrix(cmatrix: IMatrix<DrawableInteger>?) {
+        if (cmatrix == null) {
+            image.setImageBitmap(Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888))
+            console_out.text = ""
+            return
+        }
         console_out.text = ""
-        val decorableMatrix = constructCompositeMatrix()
+        val decorableMatrix = cmatrix//constructCompositeMatrix()
 
         var matrix: DrawableMatrix<DrawableInteger> =
             DrawableMatrixDecorator(decorableMatrix)
@@ -166,11 +167,6 @@ class MainActivity : AppCompatActivity() {
             GuiPainter(image, Bitmap.createBitmap(500, 500, Bitmap.Config.ARGB_8888)),
             Point(10, 10)
         )
-    }
-
-
-    private fun <T : IDrawable> wrapMatrixIntoBorder(matrix: IMatrix<T>): DrawableMatrix<T> {
-        return BorderMatrixDecorator<T>(DrawableMatrixDecorator<T>(matrix))
     }
 
 
